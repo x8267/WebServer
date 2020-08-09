@@ -7,11 +7,17 @@
 
 //#pragma comment(lib, "ws2_32.lib")	//引用win32socket动态库
 
-
 #include <iostream>
 
 
 using namespace std;
+
+struct DataPackage
+{
+	int age;
+	char name[32];
+};
+
 
 int main()
 {
@@ -87,17 +93,11 @@ int main()
 		}
 
 		// 6 处理客户端请求
-		if (0 == strcmp(_recvBuf, "getName"))
+		if (0 == strcmp(_recvBuf, "getInfo"))
 		{
-			char Buff[] = "I'm server.";
+			DataPackage dp = {23, "123"};
 			// 7 send向客户端发送一条数据
-			send(_cSock, Buff, strlen(Buff) + 1, 0);
-		}
-		else if (0 == strcmp(_recvBuf, "getAge"))
-		{
-			char Buff[] = "23";
-			// 7 send向客户端发送一条数据
-			send(_cSock, Buff, strlen(Buff) + 1, 0);
+			send(_cSock, (const char*)&dp, sizeof(DataPackage), 0);
 		}
 		else
 		{

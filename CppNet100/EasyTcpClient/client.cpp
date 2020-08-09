@@ -8,6 +8,12 @@
 
 using namespace std;
 
+struct DataPackage
+{
+	int age;
+	char name[32];
+};
+
 int main()
 {
 	//启动Windows socket 2.x环境
@@ -69,7 +75,8 @@ int main()
 		}
 		else
 		{
-			cout << "recv data: " << recvBuff << endl;
+			DataPackage* dp = (DataPackage*)recvBuff;
+			cout << "recv data: \n" << "age = "<< dp->age << " name = " << dp->name << endl;
 		}
 	}
 
