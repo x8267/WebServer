@@ -137,25 +137,28 @@ int main()
 	char _recvBuf[256] = {};
 	while (true)
 	{
-		DataHeader header = {};
+		//缓冲区
+		char szRecv[1024] = {};
 		// 5 接收客户端请求
-		int nlen = recv(_cSock, (char*)&header, sizeof(DataHeader), 0);
+		int nlen = recv(_cSock, szRecv, sizeof(DataHeader), 0);
+		DataHeader* header = (DataHeader*)szRecv;
 		if (nlen <= 0)
 		{
 			cout << "recv error!" << endl;
 			cout << "server has been stop!" << endl;
 			break;
 		}
+		//if (nlen >= sizeof(DataHeader))	//判断收到的消息是否齐全
 
 		// 6 处理客户端请求
-		switch (header.cmd)
+		switch (header->cmd)
 		{
 			case CMD_LOGIN:
 			{
-				Login login = {};
-				recv(_cSock, (char*)&login + sizeof(DataHeader), sizeof(Login) - sizeof(DataHeader), 0);
-				cout << "recv cmd: " << header.cmd << ", datalength: " << login.dataLength;
-				cout << " user name: " << login.userName << " passwd: " << login.passWord << endl;
+				Login* login = (Login*)szRecv;
+				recv(_cSock, szRecv + sizeof(DataHeader), header->dataLength - sizeof(DataHeader), 0);
+				cout << "recv cmd: " << header->cmd << ", datalength: " << login->dataLength;
+				cout << " user name: " << login->userName << " passwd: " << login->passWord << endl;
 				//判断用户名密码是否正确
 				LoginResult ret;
 				send(_cSock, (char*)&ret, sizeof(LoginResult), 0);
@@ -163,10 +166,10 @@ int main()
 			break;
 			case CMD_LOGOUT:
 			{
-				Logout logout = {};
-				recv(_cSock, (char*)&logout + sizeof(DataHeader), sizeof(Logout) - sizeof(DataHeader), 0);
-				cout << "recv cmd: " << header.cmd << ", datalength: " << logout.dataLength;
-				cout << " user name: " << logout.userName << endl;
+				Logout* logout = (Logout*)szRecv;
+				recv(_cSock, szRecv + sizeof(DataHeader), header->dataLength - sizeof(DataHeader), 0);
+				cout << "recv cmd: " << header->cmd << ", datalength: " << logout->dataLength;
+				cout << " user name: " << logout->userName << endl;
 				//判断用户名密码是否正确
 				LogoutResult ret;
 				send(_cSock, (char*)&ret, sizeof(LogoutResult), 0);
@@ -174,8 +177,7 @@ int main()
 			break;
 			default:
 			{
-				header.cmd = CMD_ERROR;
-				header.dataLength = 0;
+				DataHeader header = { 0, CMD_ERROR };
 				send(_cSock, (char*)&header, sizeof(DataHeader), 0);
 			}
 			break;
