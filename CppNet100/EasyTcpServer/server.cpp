@@ -21,7 +21,9 @@ struct DataPackage
 enum CMD
 {
 	CMD_LOGIN,
+	CMD_LOGIN_RESULT,
 	CMD_LOGOUT,
+	CMD_LOGOUT_RESULT,
 	CMD_ERROR
 };
 //消息头部
@@ -31,24 +33,46 @@ struct DataHeader
 	short cmd;	//命令
 };
 //登录
-struct Login
+struct Login : public DataHeader
 {
+	Login()
+	{
+		dataLength = sizeof(Login);
+		cmd = CMD_LOGIN;
+	}
 	char userName[32];
 	char passWord[32];
 };
 //登录结果
-struct LoginResult
+struct LoginResult : public DataHeader
 {
+	LoginResult()
+	{
+		dataLength = sizeof(LoginResult);
+		cmd = CMD_LOGIN_RESULT;
+		result = 1;
+	}
 	int result;
 };
 //登出
-struct Logout
+struct Logout : public DataHeader
 {
+	Logout()
+	{
+		dataLength = sizeof(Logout);
+		cmd = CMD_LOGOUT;
+	}
 	char userName[32];
 };
 //登出结果
-struct LogoutResult
+struct LogoutResult : public DataHeader
 {
+	LogoutResult()
+	{
+		dataLength = sizeof(LogoutResult);
+		cmd = CMD_LOGOUT_RESULT;
+		result = 1;
+	}
 	int result;
 };
 
@@ -122,10 +146,6 @@ int main()
 			cout << "server has been stop!" << endl;
 			break;
 		}
-		else
-		{
-			cout << "recv cmd: " << header.cmd << ", datalength: " << header.dataLength << endl;
-		}
 
 		// 6 处理客户端请求
 		switch (header.cmd)
@@ -133,20 +153,22 @@ int main()
 			case CMD_LOGIN:
 			{
 				Login login = {};
-				recv(_cSock, (char*)&login, sizeof(Login), 0);
+				recv(_cSock, (char*)&login + sizeof(DataHeader), sizeof(Login) - sizeof(DataHeader), 0);
+				cout << "recv cmd: " << header.cmd << ", datalength: " << login.dataLength;
+				cout << " user name: " << login.userName << " passwd: " << login.passWord << endl;
 				//判断用户名密码是否正确
-				LoginResult ret = {1};
-				send(_cSock, (char*)&header, sizeof(DataHeader), 0);
+				LoginResult ret;
 				send(_cSock, (char*)&ret, sizeof(LoginResult), 0);
 			}
 			break;
 			case CMD_LOGOUT:
 			{
 				Logout logout = {};
-				recv(_cSock, (char*)&logout, sizeof(Logout), 0);
+				recv(_cSock, (char*)&logout + sizeof(DataHeader), sizeof(Logout) - sizeof(DataHeader), 0);
+				cout << "recv cmd: " << header.cmd << ", datalength: " << logout.dataLength;
+				cout << " user name: " << logout.userName << endl;
 				//判断用户名密码是否正确
-				LogoutResult ret = { 1 };
-				send(_cSock, (char*)&header, sizeof(DataHeader), 0);
+				LogoutResult ret;
 				send(_cSock, (char*)&ret, sizeof(LogoutResult), 0);
 			}
 			break;
