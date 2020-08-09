@@ -14,6 +14,40 @@ struct DataPackage
 	char name[32];
 };
 
+enum CMD
+{
+	CMD_LOGIN,
+	CMD_LOGOUT,
+	CMD_ERROR
+};
+//消息头部
+struct DataHeader
+{
+	short dataLength;	//数据长度
+	short cmd;	//命令
+};
+//登录
+struct Login
+{
+	char userName[32];
+	char passWord[32];
+};
+//登录结果
+struct LoginResult
+{
+	int result;
+};
+//登出
+struct Logout
+{
+	char userName[32];
+};
+//登出结果
+struct LogoutResult
+{
+	int result;
+};
+
 int main()
 {
 	//启动Windows socket 2.x环境
@@ -51,7 +85,7 @@ int main()
 	while (true)
 	{
 		// 3 输入请求命令
-		cout << "Please input your operation: " << endl;
+		cout << "Please input your operator: " << endl;
 		char inputBuff[256] = {};
 		cin >> inputBuff;
 		// 4 处理请求
@@ -60,23 +94,39 @@ int main()
 			cout << "client has been stop!" << endl;
 			break;
 		}
-		else
+		else if (0 == strcmp(inputBuff, "login"))
 		{
 			// 5 向服务器发送请求
-			send(_csock, inputBuff, strlen(inputBuff) + 1, 0);
+			Login login = {"yang", "yang123"};
+			DataHeader dh = { sizeof(login), CMD_LOGIN };
+			//strcpy(login.userName, "yang");
+			//strcpy(login.passWord, "yang123");
+			send(_csock, (const char*)&dh, sizeof(DataHeader), 0);
+			send(_csock, (const char*)&login, sizeof(login), 0);
+			// 6 接收服务器返回的信息 recv
+			DataHeader retHeader = {};
+			LoginResult loginRet = {};
+			recv(_csock, (char*)&retHeader, sizeof(DataHeader), 0);
+			recv(_csock, (char*)&loginRet, sizeof(loginRet), 0);
+			cout << "login result is: " << loginRet.result << endl;
 		}
-
-		// 6 接收服务器信息 recv
-		char recvBuff[256] = {};
-		int nlen = recv(_csock, recvBuff, 256, 0);
-		if (nlen <= 0)
+		else if (0 == strcmp(inputBuff, "logout"))
 		{
-			cout << "recv error!\n";
+			// 5 向服务器发送请求
+			Logout logout = { "yang" };
+			DataHeader dh = { sizeof(logout), CMD_LOGOUT };
+			send(_csock, (const char*)&dh, sizeof(dh), 0);
+			send(_csock, (const char*)&logout, sizeof(logout), 0);
+			// 6 接收服务器返回的信息 recv
+			DataHeader retHeader = {};
+			LogoutResult logoutRet = {};
+			recv(_csock, (char*)&retHeader, sizeof(retHeader), 0);
+			recv(_csock, (char*)&logoutRet, sizeof(logoutRet), 0);
+			cout << "logout result is: " << logoutRet.result << endl;
 		}
 		else
 		{
-			DataPackage* dp = (DataPackage*)recvBuff;
-			cout << "recv data: \n" << "age = "<< dp->age << " name = " << dp->name << endl;
+			cout << "input error, please input again!" << endl;
 		}
 	}
 

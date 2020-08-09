@@ -18,6 +18,40 @@ struct DataPackage
 	char name[32];
 };
 
+enum CMD
+{
+	CMD_LOGIN,
+	CMD_LOGOUT,
+	CMD_ERROR
+};
+//消息头部
+struct DataHeader
+{
+	short dataLength;	//数据长度
+	short cmd;	//命令
+};
+//登录
+struct Login
+{
+	char userName[32];
+	char passWord[32];
+};
+//登录结果
+struct LoginResult
+{
+	int result;
+};
+//登出
+struct Logout
+{
+	char userName[32];
+};
+//登出结果
+struct LogoutResult
+{
+	int result;
+};
+
 
 int main()
 {
@@ -79,8 +113,9 @@ int main()
 	char _recvBuf[256] = {};
 	while (true)
 	{
+		DataHeader header = {};
 		// 5 接收客户端请求
-		int nlen = recv(_cSock, _recvBuf, 256, 0);
+		int nlen = recv(_cSock, (char*)&header, sizeof(DataHeader), 0);
 		if (nlen <= 0)
 		{
 			cout << "recv error!" << endl;
@@ -89,20 +124,39 @@ int main()
 		}
 		else
 		{
-			cout << "recv client msg: " << _recvBuf << endl;
+			cout << "recv cmd: " << header.cmd << ", datalength: " << header.dataLength << endl;
 		}
 
 		// 6 处理客户端请求
-		if (0 == strcmp(_recvBuf, "getInfo"))
+		switch (header.cmd)
 		{
-			DataPackage dp = {23, "123"};
-			// 7 send向客户端发送一条数据
-			send(_cSock, (const char*)&dp, sizeof(DataPackage), 0);
-		}
-		else
-		{
-			char Buff[] = "??";
-			send(_cSock, Buff, strlen(Buff) + 1, 0);
+			case CMD_LOGIN:
+			{
+				Login login = {};
+				recv(_cSock, (char*)&login, sizeof(Login), 0);
+				//判断用户名密码是否正确
+				LoginResult ret = {1};
+				send(_cSock, (char*)&header, sizeof(DataHeader), 0);
+				send(_cSock, (char*)&ret, sizeof(LoginResult), 0);
+			}
+			break;
+			case CMD_LOGOUT:
+			{
+				Logout logout = {};
+				recv(_cSock, (char*)&logout, sizeof(Logout), 0);
+				//判断用户名密码是否正确
+				LogoutResult ret = { 1 };
+				send(_cSock, (char*)&header, sizeof(DataHeader), 0);
+				send(_cSock, (char*)&ret, sizeof(LogoutResult), 0);
+			}
+			break;
+			default:
+			{
+				header.cmd = CMD_ERROR;
+				header.dataLength = 0;
+				send(_cSock, (char*)&header, sizeof(DataHeader), 0);
+			}
+			break;
 		}
 	}
 	
